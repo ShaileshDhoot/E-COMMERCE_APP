@@ -16,23 +16,57 @@ class User {
       return db.collection('users').insertOne(this)
     
   }
-
-  addProductToCart(product){
-    // const cartProductIndex = this.cart.items.findIndex(item => item.productId.toString() === product._id.toString());
-
-    // if (cartProductIndex !== -1) {
-    //   this.cart.items[cartProductIndex].quantity += 1;
-    // } else {
-    //   // If the product does not exist, add it to the cart
-    //   this.cart.items.push({ productId: new mongodb.ObjectId(product._id), quantity: 1 });
-    // }
-     const updatedCart = {items: [{productId: new mongodb.ObjectId(product._id), quantity:1}]}
+  addProductToCart(product) {
+    const cartProductIndex = this.cart.items.findIndex(item => item.productId.toString() === product._id.toString());
+  
+    if (cartProductIndex !== -1) {
+      // If the product already exists, update the quantity
+      this.cart.items[cartProductIndex].quantity += 1;
+    } else {
+      // If the product does not exist, add it to the cart
+      this.cart.items.push({ productId: new mongodb.ObjectId(product._id), quantity: 1 });
+    }
+    const updatedCart = { ...this.cart };
     const db = getDb();
     return db.collection('users').updateOne(
-      {_id : new mongodb.ObjectId(this._id) },
-      {$set: {cart: updatedCart}}
-    )
+      { _id: new mongodb.ObjectId(this._id) },
+      { $set: { cart: updatedCart } }
+    );
   }
+  
+  getCart() {
+    const db = getDb();
+    const productIds = this.cart.items.map(item => {
+      return item.productId;
+    });
+    return db
+      .collection('products')
+      .find({ _id: { $in: productIds } })
+      .toArray()
+      .then(products => {
+        return products.map(p => {
+          return {
+            ...p,
+            quantity: this.cart.items.find(i => {
+              return i.productId.toString() === p._id.toString();
+            }).quantity
+          };
+        });
+      })
+      .catch(err => console.log(err));
+  }
+
+  deleteProductFromCart(productId) {
+    const updatedCartItems = this.cart.items.filter(item => item.productId.toString() !== productId.toString());
+    this.cart.items = updatedCartItems;
+  
+    const db = getDb();
+    return db.collection('users').updateOne(
+      { _id: new mongodb.ObjectId(this._id) },
+      { $set: { cart: this.cart } }
+    );
+  }
+  
 
   static findUserById(userId){
     const db = getDb();
