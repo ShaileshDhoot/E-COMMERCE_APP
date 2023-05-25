@@ -43,8 +43,10 @@ exports.getIndex = (req, res, next) => {
 
 exports.getCart = (req, res, next) => {
   req.user
-    .getCart()
-    .then(products => {
+    .populate('cart.items.productId')
+    .then(user => {
+      //console.log(user.cart.items)
+      let products = user.cart.items
       res.render('shop/cart', {
         path: '/cart',
         pageTitle: 'Your Cart',
@@ -58,10 +60,10 @@ exports.postCart = (req, res, next) => {
   const prodId = req.body.productId;
   Product.findById(prodId)
   .then((product)=>{
-    return req.user.addProductToCart(product)    
+    return req.user.addToCart(product)    
     
   .then((result)=>{
-      console.log(result)
+      //console.log(result)
       res.redirect('/cart')
     })
   .catch(err=>console.log(err))
@@ -71,10 +73,12 @@ exports.postCart = (req, res, next) => {
 
 exports.postCartDeleteProduct = (req, res, next) => {
   const productId = req.body.productId; // Assuming you're passing the productId in the request body
-
+  // console.log( 'productId----->', productId)
+  // console.log('req.user--->', req.user)
   req.user
     .deleteProductFromCart(productId) // Call the deleteProductFromCart method with the productId
     .then(() => {
+      console.log('Product Deleted')
       res.redirect('/cart');
     })
     .catch(err => console.log(err));
