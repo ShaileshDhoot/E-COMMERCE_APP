@@ -15,7 +15,7 @@ exports.postAddProduct = (req, res, next) => {
   const imageUrl = req.body.imageUrl;
   const price = req.body.price;
   const description = req.body.description;
-  const product = new Product(title, price,description,imageUrl, null, req.user._id) 
+  const product = new Product({title:title, price:price,description:description,imageUrl:imageUrl}) 
   product
     .save()
     .then(result => {
@@ -57,10 +57,7 @@ exports.postEditProduct = (req, res, next) => {
   const updatedImageUrl = req.body.imageUrl;
   const updatedDesc = req.body.description;
 
-  const product = new Product(updatedTitle,updatedPrice,updatedDesc,updatedImageUrl,  prodId)
-
-    
-  product.save()
+   Product.findOneAndUpdate({_id: prodId},{title:updatedTitle,price:updatedPrice,description:updatedDesc,imageUrl:updatedImageUrl},{new:true})
   .then(result => {
       console.log('UPDATED PRODUCT!');
       res.redirect('/admin/products');
@@ -69,7 +66,7 @@ exports.postEditProduct = (req, res, next) => {
 };
 
 exports.getProducts = (req, res, next) => {
-Product.fetchAll()
+Product.find()
     .then(products => {
       res.render('admin/products', {
         prods: products,
@@ -82,7 +79,7 @@ Product.fetchAll()
 
 exports.postDeleteProduct = (req, res, next) => {
   const prodId = req.body.productId;
-  Product.deleteById(prodId)
+  Product.deleteOne({_id: prodId})
     .then(() => {
       console.log('Product deleted');
       res.redirect('/admin/products');
